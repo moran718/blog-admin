@@ -60,7 +60,8 @@ export const http = {
     const formData = new FormData()
     formData.append(fieldName, file)
     return request.post(url, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 300000 // 5分钟超时，适合大文件上传
     })
   }
 }
