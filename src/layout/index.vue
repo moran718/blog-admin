@@ -66,8 +66,7 @@
         <div class="header-right">
           <el-dropdown @command="handleCommand">
             <span class="user-info">
-              <el-avatar :size="32"
-                :src="user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin'"></el-avatar>
+              <el-avatar :size="32" :src="userAvatar"></el-avatar>
               <span class="username">{{ user.username || '管理员' }}</span>
               <i class="el-icon-arrow-down"></i>
             </span>
@@ -88,7 +87,7 @@
 </template>
 
 <script>
-import { http } from '@/utils/request'
+import { http, getResourceUrl } from '@/utils/request'
 import { resetAuthCheck } from '@/router'
 
 export default {
@@ -101,6 +100,16 @@ export default {
   computed: {
     user() {
       return this.$store.state.user || {}
+    },
+    userAvatar() {
+      const avatar = this.user.avatar
+      if (!avatar) {
+        return 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin'
+      }
+      if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+        return avatar
+      }
+      return getResourceUrl(avatar)
     }
   },
   methods: {

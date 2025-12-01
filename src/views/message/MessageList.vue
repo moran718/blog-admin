@@ -19,8 +19,7 @@
         <el-table-column label="用户" width="150">
           <template slot-scope="scope">
             <div class="user-info">
-              <el-avatar :size="30"
-                :src="scope.row.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + scope.row.userId" />
+              <el-avatar :size="30" :src="getAvatarUrl(scope.row)" />
               <span class="username">{{ scope.row.username || '未知用户' }}</span>
             </div>
           </template>
@@ -39,8 +38,8 @@
               <span v-else-if="!scope.row.imageList || scope.row.imageList.length === 0" class="text-muted">-</span>
               <!-- 图片预览（仅留言有图片） -->
               <div v-if="scope.row.imageList && scope.row.imageList.length > 0" class="image-preview">
-                <el-image v-for="(img, index) in scope.row.imageList" :key="index" :src="img"
-                  :preview-src-list="scope.row.imageList" fit="cover" class="preview-img" />
+                <el-image v-for="(img, index) in scope.row.imageList" :key="index" :src="getImageUrl(img)"
+                  :preview-src-list="getImageListUrls(scope.row.imageList)" fit="cover" class="preview-img" />
               </div>
             </div>
           </template>
@@ -72,7 +71,7 @@
 </template>
 
 <script>
-import { http } from '@/utils/request'
+import { http, getResourceUrl } from '@/utils/request'
 
 export default {
   name: 'MessageList',
@@ -95,6 +94,27 @@ export default {
     this.loadMessages()
   },
   methods: {
+    getAvatarUrl(row) {
+      const avatar = row.avatar
+      if (!avatar) {
+        return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + row.userId
+      }
+      if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+        return avatar
+      }
+      return getResourceUrl(avatar)
+    },
+    getImageUrl(img) {
+      if (!img) return ''
+      if (img.startsWith('http://') || img.startsWith('https://')) {
+        return img
+      }
+      return getResourceUrl(img)
+    },
+    getImageListUrls(imageList) {
+      if (!imageList) return []
+      return imageList.map(img => this.getImageUrl(img))
+    },
     async loadMessages() {
       this.loading = true
       try {

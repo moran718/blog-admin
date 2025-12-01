@@ -18,8 +18,7 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column label="头像" width="80">
           <template slot-scope="scope">
-            <el-avatar :size="40"
-              :src="scope.row.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + scope.row.id" />
+            <el-avatar :size="40" :src="getAvatarUrl(scope.row)" />
           </template>
         </el-table-column>
         <el-table-column prop="username" label="用户名" width="120" />
@@ -95,7 +94,7 @@
 </template>
 
 <script>
-import { http } from '@/utils/request'
+import { http, getResourceUrl } from '@/utils/request'
 
 export default {
   name: 'UserList',
@@ -127,6 +126,16 @@ export default {
     this.loadUsers()
   },
   methods: {
+    getAvatarUrl(user) {
+      const avatar = user.avatar
+      if (!avatar) {
+        return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.id
+      }
+      if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+        return avatar
+      }
+      return getResourceUrl(avatar)
+    },
     async loadUsers() {
       this.loading = true
       try {
