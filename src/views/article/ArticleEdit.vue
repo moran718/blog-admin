@@ -31,7 +31,17 @@
           <el-input v-model="form.summary" type="textarea" :rows="3" placeholder="请输入文章摘要" />
         </el-form-item>
         <el-form-item label="文章内容" prop="content">
-          <el-input v-model="form.content" type="textarea" :rows="15" placeholder="请输入文章内容（支持 Markdown）" />
+          <div class="content-editor">
+            <div class="editor-toolbar">
+              <el-upload class="image-uploader" action="#" :show-file-list="false" :before-upload="beforeImageUpload"
+                :http-request="uploadContentImage" accept="image/*">
+                <el-button size="small" type="primary" icon="el-icon-picture">插入图片</el-button>
+              </el-upload>
+              <span class="toolbar-tip">先将光标定位到要插入的位置，再点击上传图片</span>
+            </div>
+            <el-input ref="contentInput" v-model="form.content" type="textarea" :rows="15"
+              placeholder="请输入文章内容（支持 Markdown）" @blur="saveCursorPosition" />
+          </div>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="submitting" @click="handleSubmit">保存文章</el-button>
@@ -66,7 +76,8 @@ export default {
         content: [{ required: true, message: '请输入文章内容', trigger: 'blur' }]
       },
       categoryOptions: [],
-      tags: []
+      tags: [],
+      cursorPosition: 0
     }
   },
   created() {
@@ -162,6 +173,48 @@ export default {
         this.$message.error('封面上传失败')
       }
     },
+    beforeImageUpload(file) {
+      const isImage = file.type.startsWith('image/')
+      const isLt5M = file.size / 1024 / 1024 < 5
+
+      if (!isImage) {
+        this.$message.error('只能上传图片文件!')
+        return false
+      }
+      if (!isLt5M) {
+        this.$message.error('图片大小不能超过 5MB!')
+        return false
+      }
+      return true
+    },
+    saveCursorPosition() {
+      // 保存光标位置
+      const textarea = this.$refs.contentInput.$el.querySelector('textarea')
+      if (textarea) {
+        this.cursorPosition = textarea.selectionStart
+      }
+    },
+    async uploadContentImage(options) {
+      try {
+        const res = await http.upload('/api/record/uploadImage', options.file)
+        // 只存储相对路径，前端展示时再拼接完整 URL
+        const imageUrl = res.data
+        const markdownImage = `![图片](${imageUrl})`
+
+        // 在光标位置插入图片
+        const content = this.form.content || ''
+        const pos = this.cursorPosition
+        this.form.content = content.slice(0, pos) + markdownImage + content.slice(pos)
+
+        // 更新光标位置到插入内容之后
+        this.cursorPosition = pos + markdownImage.length
+
+        this.$message.success('图片已插入到光标位置')
+      } catch (error) {
+        console.error('图片上传失败:', error)
+        this.$message.error('图片上传失败')
+      }
+    },
     handleSubmit() {
       this.$refs.form.validate(async valid => {
         if (!valid) return
@@ -238,5 +291,28 @@ export default {
 .upload-tip {
   font-size: 12px;
   color: #999;
+}
+
+.content-editor {
+  width: 100%;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+.toolbar-tip {
+  font-size: 12px;
+  color: #909399;
+}
+
+.image-uploader {
+  display: inline-block;
 }
 </style>
