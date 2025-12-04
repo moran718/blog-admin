@@ -83,6 +83,12 @@ const routes = [
         name: 'Levels',
         component: () => import('@/views/level/LevelList.vue'),
         meta: { title: '等级管理' }
+      },
+      {
+        path: 'browse',
+        name: 'Browse',
+        component: () => import('@/views/browse/BrowseList.vue'),
+        meta: { title: '浏览记录' }
       }
     ]
   }

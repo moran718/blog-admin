@@ -48,6 +48,10 @@
           <i class="el-icon-headset"></i>
           <span slot="title">音乐管理</span>
         </el-menu-item>
+        <el-menu-item index="/browse">
+          <i class="el-icon-view"></i>
+          <span slot="title">浏览记录</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 

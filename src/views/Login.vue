@@ -67,12 +67,17 @@ export default {
         if (!valid) return
         this.loading = true
         try {
-          await http.post('/api/user/login', this.loginForm)
+          const loginRes = await http.post('/api/user/login', this.loginForm)
+          // 存储 token
+          if (loginRes.data && loginRes.data.token) {
+            localStorage.setItem('token', loginRes.data.token)
+          }
           // 检查是否是管理员
           const userRes = await http.get('/api/user/info')
           if (userRes.data.role !== 1) {
             this.$message.error('您没有管理员权限')
             await http.post('/api/user/logout')
+            localStorage.removeItem('token')
             return
           }
           this.$store.commit('SET_USER', userRes.data)
