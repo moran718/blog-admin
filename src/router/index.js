@@ -85,6 +85,12 @@ const routes = [
         meta: { title: '等级管理' }
       },
       {
+        path: 'sensitive-words',
+        name: 'SensitiveWords',
+        component: () => import('@/views/sensitive/SensitiveWordList.vue'),
+        meta: { title: '敏感词管理' }
+      },
+      {
         path: 'browse',
         name: 'Browse',
         component: () => import('@/views/browse/BrowseList.vue'),

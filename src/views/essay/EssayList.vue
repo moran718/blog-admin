@@ -52,11 +52,14 @@
           </template>
         </el-table-column>
         <el-table-column prop="date" label="发布时间" width="160" align="center"></el-table-column>
-        <el-table-column label="操作" width="180" align="center" fixed="right">
+        <el-table-column label="操作" width="280" align="center" fixed="right">
           <template slot-scope="scope">
             <div class="action-buttons">
               <el-button type="primary" size="mini" icon="el-icon-view" @click="handleView(scope.row)">
                 详情
+              </el-button>
+              <el-button type="warning" size="mini" icon="el-icon-edit" @click="handleEdit(scope.row)">
+                修改
               </el-button>
               <el-button type="danger" size="mini" icon="el-icon-delete" @click="handleDelete(scope.row)">
                 删除
@@ -105,6 +108,41 @@
       <div slot="footer">
         <el-button @click="addVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmitEssay" :loading="submitting">发布</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 修改随笔弹窗 -->
+    <el-dialog title="修改随笔" :visible.sync="editVisible" width="600px" @close="resetEditForm">
+      <el-form ref="editForm" :model="editForm" :rules="editRules" label-width="80px">
+        <el-form-item label="内容" prop="content">
+          <el-input v-model="editForm.content" type="textarea" :rows="6" placeholder="分享你的想法..." maxlength="1000"
+            show-word-limit></el-input>
+        </el-form-item>
+        <el-form-item label="图片">
+          <el-upload action="#" list-type="picture-card" :auto-upload="false" :file-list="editForm.fileList"
+            :on-change="handleEditFileChange" :on-remove="handleEditFileRemove" :before-upload="beforeUpload" accept="image/*"
+            :limit="9">
+            <i class="el-icon-plus"></i>
+          </el-upload>
+          <div class="upload-tip">最多上传9张图片，支持 jpg/png/gif 格式</div>
+        </el-form-item>
+        <el-form-item label="视频">
+          <el-upload action="#" :auto-upload="false" :file-list="editForm.videoList" :on-change="handleEditVideoChange"
+            :on-remove="handleEditVideoRemove" :before-upload="beforeVideoUpload" accept="video/*" :limit="3">
+            <el-button size="small" type="primary" icon="el-icon-upload">上传视频</el-button>
+          </el-upload>
+          <div class="upload-tip">最多上传3个视频，支持 mp4/webm 格式，单个不超过100MB</div>
+          <!-- 视频预览 -->
+          <div class="video-preview-list" v-if="editForm.videoList && editForm.videoList.length > 0">
+            <div class="video-preview-item" v-for="(video, index) in editForm.videoList" :key="index">
+              <video :src="video.url" controls width="200"></video>
+            </div>
+          </div>
+        </el-form-item>
+      </el-form>
+      <div slot="footer">
+        <el-button @click="editVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSubmitEdit" :loading="editSubmitting">保存</el-button>
       </div>
     </el-dialog>
 
@@ -212,6 +250,20 @@ export default {
         videoList: []
       },
       addRules: {
+        content: [{ required: true, message: '请输入随笔内容', trigger: 'blur' }]
+      },
+      // 修改随笔
+      editVisible: false,
+      editSubmitting: false,
+      editForm: {
+        id: null,
+        content: '',
+        fileList: [],
+        videoList: [],
+        existingImages: [],
+        existingVideos: []
+      },
+      editRules: {
         content: [{ required: true, message: '请输入随笔内容', trigger: 'blur' }]
       }
     }
@@ -416,6 +468,107 @@ export default {
           this.$message.error(error.message || '发布失败')
         } finally {
           this.submitting = false
+        }
+      })
+    },
+    // 编辑随笔相关方法
+    handleEdit(row) {
+      this.editForm.id = row.id
+      this.editForm.content = row.content
+      this.editForm.existingImages = row.images || []
+      this.editForm.existingVideos = row.videos || []
+      // 将现有图片转换为 el-upload 的文件列表格式
+      this.editForm.fileList = (row.images || []).map((img, index) => ({
+        name: `image-${index}`,
+        url: this.getFullUrl(img),
+        path: img // 保存原始路径
+      }))
+      // 将现有视频转换为 el-upload 的文件列表格式
+      this.editForm.videoList = (row.videos || []).map((video, index) => ({
+        name: `video-${index}`,
+        url: this.getFullUrl(video),
+        path: video
+      }))
+      this.editVisible = true
+    },
+    resetEditForm() {
+      this.editForm = {
+        id: null,
+        content: '',
+        fileList: [],
+        videoList: [],
+        existingImages: [],
+        existingVideos: []
+      }
+      if (this.$refs.editForm) {
+        this.$refs.editForm.clearValidate()
+      }
+    },
+    handleEditFileChange(file, fileList) {
+      this.editForm.fileList = fileList
+    },
+    handleEditFileRemove(file, fileList) {
+      this.editForm.fileList = fileList
+    },
+    handleEditVideoChange(file, fileList) {
+      this.editForm.videoList = fileList
+    },
+    handleEditVideoRemove(file, fileList) {
+      this.editForm.videoList = fileList
+    },
+    async handleSubmitEdit() {
+      this.$refs.editForm.validate(async (valid) => {
+        if (!valid) return
+
+        this.editSubmitting = true
+        try {
+          const images = []
+          // 处理图片：保留现有的未删除图片，上传新图片
+          for (const file of this.editForm.fileList) {
+            if (file.path) {
+              // 现有图片，保留原始路径
+              images.push(file.path)
+            } else if (file.raw) {
+              // 新上传的图片
+              const formData = new FormData()
+              formData.append('file', file.raw)
+              const uploadRes = await http.post('/api/essay/uploadImage', formData)
+              if (uploadRes.data) {
+                images.push(uploadRes.data)
+              }
+            }
+          }
+
+          const videos = []
+          // 处理视频
+          for (const file of this.editForm.videoList) {
+            if (file.path) {
+              videos.push(file.path)
+            } else if (file.raw) {
+              const formData = new FormData()
+              formData.append('file', file.raw)
+              const uploadRes = await http.post('/api/essay/uploadVideo', formData)
+              if (uploadRes.data) {
+                videos.push(uploadRes.data)
+              }
+            }
+          }
+
+          // 更新随笔
+          await http.put(`/api/essay/admin/${this.editForm.id}`, {
+            content: this.editForm.content,
+            images: images,
+            videos: videos
+          })
+
+          this.$message.success('修改成功')
+          this.editVisible = false
+          this.loadEssayList()
+        } catch (error) {
+          console.error('修改失败:', error)
+          this.$message.error(error.message || '修改失败')
+        } finally {
+          this.editSubmitting = false
         }
       })
     }
