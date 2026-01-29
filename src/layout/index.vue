@@ -56,6 +56,10 @@
           <i class="el-icon-view"></i>
           <span slot="title">浏览记录</span>
         </el-menu-item>
+        <el-menu-item index="/ai-settings">
+          <i class="el-icon-cpu"></i>
+          <span slot="title">AI设置</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -152,6 +156,8 @@ export default {
   background-color: #304156;
   transition: width 0.3s;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 
   .logo {
     height: 60px;
@@ -161,10 +167,13 @@ export default {
     font-size: 20px;
     font-weight: bold;
     background-color: #263445;
+    flex-shrink: 0;
   }
 
   .el-menu {
     border-right: none;
+    flex: 1;
+    overflow-y: auto;
   }
 }
 

@@ -25,6 +25,8 @@
               <i v-else class="el-icon-plus cover-uploader-icon"></i>
             </el-upload>
             <span class="upload-tip">支持 jpg、png 格式，最大 5MB</span>
+            <el-button type="text" icon="el-icon-magic-stick" @click="generateAiCover" :loading="generatingCover" 
+              style="margin-top: 5px; align-self: flex-start;">It's Magic! AI 自动生成封面</el-button>
           </div>
         </el-form-item>
         <el-form-item label="文章摘要">
@@ -61,6 +63,7 @@ export default {
     return {
       isEdit: false,
       submitting: false,
+      generatingCover: false,
       form: {
         id: null,
         title: '',
@@ -171,6 +174,28 @@ export default {
       } catch (error) {
         console.error('封面上传失败:', error)
         this.$message.error('封面上传失败')
+      }
+    },
+    async generateAiCover() {
+      if (!this.form.title) {
+        this.$message.warning('请先输入文章标题，AI将根据标题生成封面')
+        return
+      }
+      this.generatingCover = true
+      try {
+        const content = this.form.summary || this.form.content || ''
+        const res = await http.post('/api/ai/generate-image', { 
+            prompt: this.form.title,
+            content: content
+        }, { timeout: 60000 })
+        // 假设返回结构 res.data 是图片链接
+        this.form.cover = res.data
+        this.$message.success('AI 封面生成成功')
+      } catch (error) {
+        console.error('生成失败:', error)
+        this.$message.error('生成失败: ' + (error.message || '未知错误'))
+      } finally {
+        this.generatingCover = false
       }
     },
     beforeImageUpload(file) {

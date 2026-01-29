@@ -95,6 +95,12 @@ const routes = [
         name: 'Browse',
         component: () => import('@/views/browse/BrowseList.vue'),
         meta: { title: '浏览记录' }
+      },
+      {
+        path: 'ai-settings',
+        name: 'AiSettings',
+        component: () => import('@/views/settings/AiSettings.vue'),
+        meta: { title: 'AI设置' }
       }
     ]
   }

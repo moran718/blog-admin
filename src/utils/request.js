@@ -52,8 +52,8 @@ export const http = {
   get(url, params) {
     return request.get(url, { params })
   },
-  post(url, data) {
-    return request.post(url, data)
+  post(url, data, config) {
+    return request.post(url, data, config)
   },
   put(url, data) {
     return request.put(url, data)
